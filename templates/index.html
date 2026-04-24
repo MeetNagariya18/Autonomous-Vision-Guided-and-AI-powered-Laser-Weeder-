@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🌾 Weed Rover — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════
+   DESIGN SYSTEM — Farm Brutalist
+══════════════════════════════════════════ */
+:root {
+  --soil:       #2c1a0e;
+  --bark:       #4a2f1a;
+  --earth:      #7a5230;
+  --clay:       #b07d50;
+  --straw:      #e8c97a;
+  --wheat:      #f0d98c;
+  --lime:       #c8e86e;
+  --leaf:       #5ab52f;
+  --deep-leaf:  #2e6b10;
+  --laser:      #ffe600;
+  --fire:       #ff4422;
+  --sky:        #a8d8ea;
+  --off-white:  #f5f0e8;
+  --panel-bg:   rgba(44,26,14,0.82);
+  --border:     1px solid rgba(232,201,122,0.25);
+  --glow-green: 0 0 18px rgba(90,181,47,0.55);
+  --glow-laser: 0 0 22px rgba(255,230,0,0.70);
+  --glow-fire:  0 0 18px rgba(255,68,34,0.60);
+  --radius:     4px;
+  --font-head:  'Playfair Display', serif;
+  --font-mono:  'DM Mono', monospace;
+  --font-body:  'Lato', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: #1a0f07;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, #2e6b1033, transparent),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60L60 0' stroke='%234a2f1a' stroke-width='0.5' opacity='0.4'/%3E%3C/svg%3E");
+  color: var(--off-white);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCANLINES OVERLAY ── */
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:999;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+  );
+}
+
+/* ══════════════════════════════════════════
+   HEADER / TITLE BAR
+══════════════════════════════════════════ */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 36px;
+  border-bottom: 2px solid var(--earth);
+  background: linear-gradient(135deg, var(--soil) 0%, #1e1008 100%);
+  position: relative; overflow: hidden;
+}
+header::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--lime), var(--laser), var(--lime), transparent);
+  animation: scanLine 3s linear infinite;
+}
+@keyframes scanLine {
+  0%   { transform:translateX(-100%); }
+  100% { transform:translateX(100%);  }
+}
+.logo-group { display:flex; align-items:center; gap:14px; }
+.logo-icon {
+  width:52px; height:52px;
+  background: radial-gradient(circle at 40% 40%, var(--lime), var(--deep-leaf));
+  border-radius:50%; display:grid; place-items:center;
+  font-size:26px; box-shadow: var(--glow-green);
+  animation: pulse-green 2.5s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%,100%{ box-shadow:0 0 10px rgba(90,181,47,0.5); }
+  50%    { box-shadow:0 0 28px rgba(90,181,47,0.9); }
+}
+.logo-text h1 {
+  font-family: var(--font-head); font-size:1.75rem; font-weight:900;
+  color: var(--wheat);
+  text-shadow: 0 0 30px rgba(240,217,140,0.4);
+  letter-spacing:0.02em;
+}
+.logo-text p {
+  font-family: var(--font-mono); font-size:0.65rem;
+  color: var(--clay); letter-spacing:0.18em; text-transform:uppercase;
+  margin-top:2px;
+}
+.status-bar {
+  display:flex; align-items:center; gap:8px;
+  font-family: var(--font-mono); font-size:0.7rem; color:var(--clay);
+}
+.status-dot {
+  width:8px; height:8px; border-radius:50%;
+  background: var(--leaf); box-shadow: var(--glow-green);
+  animation: blink 1.4s step-start infinite;
+}
+@keyframes blink { 50%{ opacity:0.2; } }
+
+/* ══════════════════════════════════════════
+   MAIN LAYOUT
+══════════════════════════════════════════ */
+main {
+  max-width: 1280px; margin: 0 auto;
+  padding: 30px 24px 60px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+}
+@media (max-width:900px) { main{ grid-template-columns:1fr; } }
+
+/* ══════════════════════════════════════════
+   PANEL / CARD
+══════════════════════════════════════════ */
+.panel {
+  background: var(--panel-bg);
+  border: var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  padding: 24px;
+}
+.panel-title {
+  font-family: var(--font-mono); font-size:0.68rem;
+  text-transform:uppercase; letter-spacing:0.18em;
+  color: var(--clay); margin-bottom:18px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; display:block; width:14px; height:2px; background:var(--lime);
+}
+
+/* ══════════════════════════════════════════
+   MODE SELECTOR
+══════════════════════════════════════════ */
+.mode-toggle {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; margin-bottom:22px;
+}
+.mode-btn {
+  padding:12px 8px;
+  background: rgba(74,47,26,0.5);
+  border: 1px solid rgba(176,125,80,0.3);
+  border-radius: var(--radius);
+  color: var(--clay); font-family: var(--font-body); font-size:0.88rem;
+  font-weight:700; cursor:pointer; text-align:center;
+  transition: all 0.2s;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.mode-btn .icon { font-size:1.6rem; }
+.mode-btn:hover  { background:rgba(90,181,47,0.15); color:var(--lime); border-color:var(--leaf); }
+.mode-btn.active {
+  background: rgba(90,181,47,0.18); color:var(--lime);
+  border-color: var(--leaf); box-shadow: var(--glow-green);
+}
+
+/* ══════════════════════════════════════════
+   UPLOAD ZONE
+══════════════════════════════════════════ */
+.upload-zone {
+  border: 2px dashed rgba(176,125,80,0.4);
+  border-radius: var(--radius);
+  padding: 28px 16px;
+  text-align: center; cursor: pointer; position:relative;
+  transition: all 0.25s;
+  margin-bottom: 18px;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--leaf);
+  background: rgba(90,181,47,0.07);
+  box-shadow: var(--glow-green);
+}
+.upload-zone input[type="file"] {
+  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%;
+}
+.upload-icon { font-size:2.2rem; margin-bottom:8px; }
+.upload-label {
+  font-family: var(--font-mono); font-size:0.72rem;
+  color: var(--clay); letter-spacing:0.08em;
+}
+.upload-label span { color:var(--lime); cursor:pointer; }
+.upload-filename {
+  margin-top:10px; font-family:var(--font-mono);
+  font-size:0.7rem; color:var(--wheat);
+  background:rgba(0,0,0,0.3); border-radius:3px;
+  padding:5px 8px; word-break:break-all;
+  display:none;
+}
+
+/* ══════════════════════════════════════════
+   MODEL PATH
+══════════════════════════════════════════ */
+.model-row {
+  display:flex; align-items:center; gap:8px; margin-bottom:18px;
+}
+.model-input {
+  flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(176,125,80,0.3);
+  border-radius:var(--radius); color:var(--off-white);
+  font-family:var(--font-mono); font-size:0.68rem;
+  padding:8px 10px; outline:none;
+  transition: border-color 0.2s;
+}
+.model-input:focus { border-color:var(--leaf); }
+.btn-check {
+  padding:8px 12px; background:rgba(74,47,26,0.8);
+  border:1px solid var(--earth); border-radius:var(--radius);
+  color:var(--straw); font-family:var(--font-mono); font-size:0.65rem;
+  cursor:pointer; white-space:nowrap;
+  transition:all 0.2s;
+}
+.btn-check:hover { background:var(--earth); color:var(--wheat); }
+
+/* ══════════════════════════════════════════
+   CONF SLIDER
+══════════════════════════════════════════ */
+.slider-row {
+  margin-bottom:22px;
+}
+.slider-label {
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--font-mono); font-size:0.68rem; color:var(--clay);
+  margin-bottom:8px;
+}
+.slider-label span { color:var(--wheat); font-weight:500; }
+input[type="range"] {
+  width:100%; accent-color:var(--leaf); cursor:pointer; height:4px;
+}
+
+/* ══════════════════════════════════════════
+   ANALYZE BUTTON
+══════════════════════════════════════════ */
+.btn-analyze {
+  width:100%; padding:14px;
+  background: linear-gradient(135deg, var(--deep-leaf) 0%, var(--leaf) 100%);
+  border:none; border-radius:var(--radius);
+  color:#fff; font-family:var(--font-head); font-size:1rem; font-weight:700;
+  letter-spacing:0.06em; cursor:pointer;
+  box-shadow: var(--glow-green);
+  transition: all 0.2s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-analyze:hover:not(:disabled) {
+  transform:translateY(-2px); box-shadow:0 0 32px rgba(90,181,47,0.8);
+}
+.btn-analyze:disabled {
+  opacity:0.4; cursor:not-allowed; transform:none;
+}
+
+/* ══════════════════════════════════════════
+   PROGRESS BAR
+══════════════════════════════════════════ */
+.progress-wrap {
+  margin-top:14px; display:none;
+}
+.progress-bg {
+  height:6px; background:rgba(0,0,0,0.4);
+  border-radius:3px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; width:0%;
+  background: linear-gradient(90deg, var(--leaf), var(--laser));
+  border-radius:3px; transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(255,230,0,0.5);
+}
+.progress-label {
+  font-family:var(--font-mono); font-size:0.65rem;
+  color:var(--clay); margin-top:5px; text-align:right;
+}
+
+/* ══════════════════════════════════════════
+   RIGHT COLUMN
+══════════════════════════════════════════ */
+.right-col { display:flex; flex-direction:column; gap:24px; }
+
+/* ══════════════════════════════════════════
+   STATS GRID
+══════════════════════════════════════════ */
+.stats-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:12px; margin-bottom:24px;
+}
+@media (max-width:700px){ .stats-grid{ grid-template-columns:1fr 1fr; } }
+
+.stat-card {
+  background: rgba(0,0,0,0.35);
+  border: var(--border); border-radius:var(--radius);
+  padding:14px 16px; text-align:center;
+  position:relative; overflow:hidden;
+  transition: box-shadow 0.3s;
+}
+.stat-card::before {
+  content:''; position:absolute; inset:0;
+  background: var(--card-accent, transparent);
+  opacity:0.07; pointer-events:none;
+}
+.stat-card.weed   { --card-accent: var(--fire); }
+.stat-card.crop   { --card-accent: var(--leaf); }
+.stat-card.target { --card-accent: var(--laser); }
+.stat-card.pan    { --card-accent: var(--sky);  }
+.stat-card.tilt   { --card-accent: var(--sky);  }
+.stat-card.conf   { --card-accent: var(--straw);}
+
+.stat-card.weed.active   { box-shadow: var(--glow-fire);  border-color:rgba(255,68,34,0.5); }
+.stat-card.crop.active   { box-shadow: var(--glow-green); border-color:rgba(90,181,47,0.5); }
+.stat-card.target.active { box-shadow: var(--glow-laser); border-color:rgba(255,230,0,0.5); }
+
+.stat-icon { font-size:1.5rem; margin-bottom:4px; }
+.stat-label {
+  font-family:var(--font-mono); font-size:0.58rem;
+  text-transform:uppercase; letter-spacing:0.14em;
+  color:var(--clay); margin-bottom:6px;
+}
+.stat-value {
+  font-family:var(--font-head); font-size:2rem; font-weight:900;
+  color:var(--wheat); line-height:1;
+}
+.stat-sub {
+  font-family:var(--font-mono); font-size:0.6rem;
+  color:var(--clay); margin-top:4px;
+}
+
+/* ══════════════════════════════════════════
+   TARGET COORDINATES
+══════════════════════════════════════════ */
+.coord-row {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;
+}
+.coord-box {
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(255,230,0,0.2);
+  border-radius:var(--radius); padding:10px 14px;
+}
+.coord-label {
+  font-family:var(--font-mono); font-size:0.58rem;
+  text-transform:uppercase; letter-spacing:0.12em; color:var(--clay);
+  margin-bottom:4px;
+}
+.coord-value {
+  font-family:var(--font-mono); font-size:1.1rem;
+  font-weight:500; color:var(--laser);
+}
+
+/* ══════════════════════════════════════════
+   IMAGE PREVIEW
+══════════════════════════════════════════ */
+.preview-area {
+  flex:1; position:relative;
+  min-height:320px;
+  background: rgba(0,0,0,0.5);
+  border: var(--border); border-radius:var(--radius);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.preview-placeholder {
+  text-align:center; color:var(--earth);
+}
+.preview-placeholder .ph-icon { font-size:3.5rem; margin-bottom:10px; }
+.preview-placeholder p { font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.1em; }
+.preview-area img, .preview-area video {
+  max-width:100%; max-height:560px; border-radius:var(--radius);
+  object-fit:contain; display:block;
+}
+.preview-badge {
+  position:absolute; top:10px; right:10px;
+  background:rgba(0,0,0,0.7); border:1px solid var(--laser);
+  border-radius:3px; padding:4px 10px;
+  font-family:var(--font-mono); font-size:0.65rem; color:var(--laser);
+  display:none;
+}
+.laser-locked { display:none; }
+.laser-locked.show {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,230,0,0.12); border:1px solid var(--laser);
+  border-radius:var(--radius); padding:10px 14px;
+  margin-bottom:14px;
+  font-family:var(--font-mono); font-size:0.75rem;
+  color:var(--laser); box-shadow: var(--glow-laser);
+  animation: laser-pulse 1s ease-in-out infinite;
+}
+@keyframes laser-pulse {
+  0%,100%{ box-shadow: var(--glow-laser); }
+  50%    { box-shadow: 0 0 35px rgba(255,230,0,0.9); }
+}
+.laser-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--laser); animation:blink 0.6s step-start infinite;
+}
+
+/* ══════════════════════════════════════════
+   DETECTIONS TABLE
+══════════════════════════════════════════ */
+.det-table-wrap {
+  max-height:200px; overflow-y:auto;
+  border:var(--border); border-radius:var(--radius);
+}
+.det-table-wrap::-webkit-scrollbar { width:4px; }
+.det-table-wrap::-webkit-scrollbar-track { background:transparent; }
+.det-table-wrap::-webkit-scrollbar-thumb { background:var(--earth); border-radius:2px; }
+
+table { width:100%; border-collapse:collapse; }
+thead th {
+  font-family:var(--font-mono); font-size:0.6rem;
+  text-transform:uppercase; letter-spacing:0.12em;
+  color:var(--clay); padding:8px 10px; text-align:left;
+  background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(176,125,80,0.2);
+  position:sticky; top:0;
+}
+tbody td {
+  font-family:var(--font-mono); font-size:0.68rem;
+  color:var(--off-white); padding:7px 10px;
+  border-bottom:1px solid rgba(74,47,26,0.4);
+}
+tbody tr:hover { background:rgba(90,181,47,0.05); }
+tbody tr.is-target { background:rgba(255,230,0,0.07); }
+.badge {
+  display:inline-block; padding:2px 7px; border-radius:20px;
+  font-size:0.58rem; font-weight:700; letter-spacing:0.08em;
+}
+.badge-weed   { background:rgba(255,68,34,0.2); color:#ff8866; border:1px solid rgba(255,68,34,0.4); }
+.badge-crop   { background:rgba(90,181,47,0.2); color:var(--lime); border:1px solid rgba(90,181,47,0.4); }
+.badge-target { background:rgba(255,230,0,0.2); color:var(--laser); border:1px solid rgba(255,230,0,0.5); }
+.badge-fixed  { background:rgba(255,165,0,0.2); color:#ffb347;   border:1px solid rgba(255,165,0,0.4); }
+
+/* ══════════════════════════════════════════
+   SAVE / DOWNLOAD
+══════════════════════════════════════════ */
+.save-strip {
+  display:flex; gap:10px; margin-top:14px; display:none;
+}
+.btn-dl {
+  flex:1; padding:10px;
+  background:rgba(74,47,26,0.7); border:1px solid var(--earth);
+  border-radius:var(--radius); color:var(--straw);
+  font-family:var(--font-mono); font-size:0.7rem; cursor:pointer;
+  transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-dl:hover { background:var(--earth); color:var(--wheat); }
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+#toast {
+  position:fixed; bottom:28px; right:28px;
+  background:rgba(44,26,14,0.95); border:1px solid var(--leaf);
+  border-radius:var(--radius); padding:12px 18px;
+  font-family:var(--font-mono); font-size:0.72rem; color:var(--lime);
+  box-shadow: var(--glow-green); z-index:9000;
+  transform:translateX(120%); transition:transform 0.3s;
+}
+#toast.show { transform:translateX(0); }
+
+/* ══════════════════════════════════════════
+   ERROR BOX
+══════════════════════════════════════════ */
+.error-box {
+  background:rgba(255,68,34,0.1); border:1px solid rgba(255,68,34,0.4);
+  border-radius:var(--radius); padding:12px 16px; margin-top:12px;
+  font-family:var(--font-mono); font-size:0.72rem; color:#ff8866;
+  display:none;
+}
+
+/* ══════════════════════════════════════════
+   DIVIDER / SECTION
+══════════════════════════════════════════ */
+.section-divider {
+  border:none; border-top:1px solid rgba(176,125,80,0.15);
+  margin:18px 0;
+}
+
+/* ══════════════════════════════════════════
+   VIDEO STATS EXTRA
+══════════════════════════════════════════ */
+.video-extra {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;
+}
+.mini-stat {
+  background:rgba(0,0,0,0.35); border:var(--border);
+  border-radius:var(--radius); padding:8px 12px;
+}
+.mini-label { font-family:var(--font-mono); font-size:0.58rem; color:var(--clay); margin-bottom:3px; }
+.mini-value { font-family:var(--font-mono); font-size:0.95rem; color:var(--wheat); }
+
+/* field decorations */
+.field-row {
+  display:flex; gap:4px; margin-bottom:30px; overflow:hidden; height:8px;
+}
+.field-stripe {
+  height:100%; border-radius:1px;
+  animation: growStripe 1s ease both;
+}
+@keyframes growStripe { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     HEADER
+══════════════════════════════════ -->
+<header>
+  <div class="logo-group">
+    <div class="logo-icon">🌾</div>
+    <div class="logo-text">
+      <h1>Weed Rover</h1>
+      <p>Precision Laser Weeding System — Command Center</p>
+    </div>
+  </div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    SYSTEM ONLINE &nbsp;|&nbsp; v2.0
+  </div>
+</header>
+
+<!-- decorative field stripes -->
+<div class="field-row" id="fieldRow"></div>
+
+<!-- ══════════════════════════════════
+     MAIN
+══════════════════════════════════ -->
+<main>
+  <!-- ── LEFT: CONTROL PANEL ── -->
+  <div>
+    <div class="panel">
+
+      <!-- Mode selector -->
+      <div class="panel-title">Input Mode</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btnImage" onclick="setMode('image')">
+          <span class="icon">🖼️</span>Image
+        </button>
+        <button class="mode-btn" id="btnVideo" onclick="setMode('video')">
+          <span class="icon">🎬</span>Video
+        </button>
+      </div>
+
+      <!-- Upload zone -->
+      <div class="panel-title">Upload File</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*,video/*" onchange="onFileSelect(event)"/>
+        <div class="upload-icon" id="uploadIcon">📂</div>
+        <div class="upload-label">
+          Drop file here or <span>Browse</span>
+        </div>
+        <div class="upload-filename" id="uploadFilename"></div>
+      </div>
+
+      <!-- Model path -->
+      <div class="panel-title">Model Weights (.pt)</div>
+      <div class="model-row">
+        <input type="text" class="model-input" id="modelPath"
+               value="MY_WEED_ROVER_BRAIN.pt"
+               placeholder="path/to/best.pt"/>
+        <button class="btn-check" onclick="checkModel()">Check</button>
+      </div>
+
+      <!-- Confidence slider -->
+      <div class="slider-row">
+        <div class="slider-label">
+          Confidence Threshold
+          <span id="confVal">0.55</span>
+        </div>
+        <input type="range" min="0.1" max="0.95" step="0.01"
+               value="0.55" id="confSlider"
+               oninput="document.getElementById('confVal').textContent=parseFloat(this.value).toFixed(2)"/>
+      </div>
+
+      <!-- Analyze button -->
+      <button class="btn-analyze" id="btnAnalyze" onclick="startAnalysis()" disabled>
+        🔬 Analyze &amp; Fire Laser
+      </button>
+
+      <!-- Progress -->
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bg"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">Processing…</div>
+      </div>
+
+      <!-- Error box -->
+      <div class="error-box" id="errorBox"></div>
+
+    </div>
+
+    <!-- Output location info -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">Output Location</div>
+      <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--clay);line-height:1.8;">
+        📁 <span id="outputPath" style="color:var(--wheat);">…/weed_rover/outputs/</span><br>
+        Annotated files + CSV log auto-saved here.
+      </div>
+      <div class="save-strip" id="saveStrip">
+        <button class="btn-dl" id="btnDlImg" onclick="downloadOutput('img')">⬇ Download Image</button>
+        <button class="btn-dl" id="btnDlCsv" onclick="downloadOutput('csv')">⬇ Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: RESULTS ── -->
+  <div class="right-col">
+
+    <!-- Stats grid -->
+    <div class="panel">
+      <div class="panel-title">Detection Stats</div>
+
+      <!-- LASER LOCKED badge -->
+      <div class="laser-locked" id="laserLocked">
+        <div class="laser-dot"></div>
+        LASER LOCKED ON TARGET
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card weed" id="cardWeed">
+          <div class="stat-icon">🌿</div>
+          <div class="stat-label">Weeds Detected</div>
+          <div class="stat-value" id="valWeeds">—</div>
+        </div>
+        <div class="stat-card crop" id="cardCrop">
+          <div class="stat-icon">🌱</div>
+          <div class="stat-label">Crops (Safe)</div>
+          <div class="stat-value" id="valCrops">—</div>
+        </div>
+        <div class="stat-card target" id="cardTarget">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-label">Target Locked</div>
+          <div class="stat-value" id="valTarget">—</div>
+        </div>
+        <div class="stat-card pan" id="cardPan">
+          <div class="stat-icon">↔️</div>
+          <div class="stat-label">Pan Angle</div>
+          <div class="stat-value" id="valPan">—</div>
+          <div class="stat-sub">degrees</div>
+        </div>
+        <div class="stat-card tilt" id="cardTilt">
+          <div class="stat-icon">↕️</div>
+          <div class="stat-label">Tilt Angle</div>
+          <div class="stat-value" id="valTilt">—</div>
+          <div class="stat-sub">degrees</div>
+        </div>
+        <div class="stat-card conf" id="cardConf">
+          <div class="stat-icon">📊</div>
+          <div class="stat-label">Target Confidence</div>
+          <div class="stat-value" id="valConf">—</div>
+        </div>
+      </div>
+
+      <!-- Target coordinates -->
+      <div class="coord-row" id="coordRow" style="display:none">
+        <div class="coord-box">
+          <div class="coord-label">Target X (px)</div>
+          <div class="coord-value" id="valCx">—</div>
+        </div>
+        <div class="coord-box">
+          <div class="coord-label">Target Y (px)</div>
+          <div class="coord-value" id="valCy">—</div>
+        </div>
+      </div>
+
+      <!-- Video-only extras -->
+      <div class="video-extra" id="videoExtra" style="display:none">
+        <div class="mini-stat">
+          <div class="mini-label">Total Frames</div>
+          <div class="mini-value" id="valFrames">—</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">Weed Frames</div>
+          <div class="mini-value" id="valWeedFrames">—</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">Weed Frame Rate</div>
+          <div class="mini-value" id="valWeedRate">—</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">Size-Corrected</div>
+          <div class="mini-value" id="valFixed">—</div>
+        </div>
+      </div>
+
+      <!-- Detections table (image only) -->
+      <div id="detTableWrap" style="display:none">
+        <hr class="section-divider"/>
+        <div class="panel-title" style="margin-bottom:10px;">All Detections</div>
+        <div class="det-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Class</th><th>Confidence</th>
+                <th>Box (x1,y1,x2,y2)</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="detTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="panel" style="flex:1">
+      <div class="panel-title">Annotated Output</div>
+      <div class="preview-area" id="previewArea">
+        <div class="preview-placeholder" id="previewPlaceholder">
+          <div class="ph-icon">🛰️</div>
+          <p>Awaiting scan data…</p>
+          <p style="margin-top:6px;font-size:0.6rem;">Upload a file and click Analyze</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end right-col -->
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let currentMode     = 'image';
+let uploadedFile    = null;
+let currentJobId    = null;
+let pollTimer       = null;
+let outputImgFile   = null;
+let outputCsvFile   = null;
+
+// ── Field stripe decoration ───────────────
+(function buildField(){
+  const row = document.getElementById('fieldRow');
+  const cols = ['#2e6b10','#5ab52f','#c8e86e','#7a5230','#4a2f1a',
+                '#2e6b10','#5ab52f','#7a5230','#2e6b10','#c8e86e'];
+  for(let i=0;i<80;i++){
+    const d=document.createElement('div');
+    d.className='field-stripe';
+    d.style.cssText=`background:${cols[i%cols.length]};flex:${0.5+Math.random()};animation-delay:${i*12}ms`;
+    row.appendChild(d);
+  }
+})();
+
+// ══════════════════════════════════════════
+//  MODE TOGGLE
+// ══════════════════════════════════════════
+function setMode(mode){
+  currentMode = mode;
+  document.getElementById('btnImage').classList.toggle('active', mode==='image');
+  document.getElementById('btnVideo').classList.toggle('active', mode==='video');
+  const fi = document.getElementById('fileInput');
+  fi.accept = mode==='image' ? 'image/*' : 'video/*';
+  resetState();
+}
+
+// ══════════════════════════════════════════
+//  FILE SELECT
+// ══════════════════════════════════════════
+function onFileSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  uploadedFile = null;
+  document.getElementById('btnAnalyze').disabled = true;
+  const fn = document.getElementById('uploadFilename');
+  fn.textContent = `📎 ${file.name}  (${(file.size/1048576).toFixed(1)} MB)`;
+  fn.style.display = 'block';
+  document.getElementById('uploadIcon').textContent = '⏫';
+  toast('Uploading…');
+  const fd = new FormData();
+  fd.append('file', file);
+  fetch('/api/upload',{method:'POST',body:fd})
+    .then(r=>r.json()).then(data=>{
+      if(data.error){ showError(data.error); return; }
+      uploadedFile = data.filename;
+      document.getElementById('btnAnalyze').disabled = false;
+      document.getElementById('uploadIcon').textContent = '✅';
+      toast(`Uploaded: ${file.name}`);
+    }).catch(err=>showError('Upload failed: '+err));
+}
+
+// drag-and-drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', ()=>zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e=>{
+  e.preventDefault(); zone.classList.remove('drag-over');
+  const dt = e.dataTransfer;
+  if(dt.files.length){
+    const inp = document.getElementById('fileInput');
+    inp.files = dt.files;
+    onFileSelect({target:inp});
+  }
+});
+
+// ══════════════════════════════════════════
+//  MODEL CHECK
+// ══════════════════════════════════════════
+function checkModel(){
+  const path = document.getElementById('modelPath').value;
+  fetch('/api/model_check',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path})})
+    .then(r=>r.json()).then(d=>{
+      toast(d.exists ? `✅ Model found: ${d.path}` : `❌ Model NOT found: ${d.path}`);
+    });
+}
+
+// ══════════════════════════════════════════
+//  MAIN ANALYSIS
+// ══════════════════════════════════════════
+function startAnalysis(){
+  if(!uploadedFile){ toast('Please upload a file first.'); return; }
+  hideError();
+  resetResults();
+  document.getElementById('btnAnalyze').disabled = true;
+  setProgress(0,'Starting…');
+  document.getElementById('progressWrap').style.display='block';
+
+  const body = {
+    filename: uploadedFile,
+    model_path: document.getElementById('modelPath').value,
+    conf: parseFloat(document.getElementById('confSlider').value)
+  };
+
+  fetch('/api/analyze',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.error){ showError(data.error); document.getElementById('btnAnalyze').disabled=false; return; }
+      if(data.type==='image'){
+        setProgress(100,'Done');
+        setTimeout(()=>document.getElementById('progressWrap').style.display='none',1200);
+        handleImageResult(data);
+        document.getElementById('btnAnalyze').disabled=false;
+      } else if(data.type==='video'){
+        currentJobId = data.job_id;
+        pollProgress(data.job_id);
+      }
+    }).catch(err=>{ showError('Request failed: '+err); document.getElementById('btnAnalyze').disabled=false; });
+}
+
+function pollProgress(jobId){
+  pollTimer = setInterval(()=>{
+    fetch(`/api/progress/${jobId}`)
+      .then(r=>r.json()).then(p=>{
+        if(p.error){ clearInterval(pollTimer); showError(p.error); return; }
+        setProgress(p.pct, `Processing frames… ${p.pct}%`);
+        if(p.done){
+          clearInterval(pollTimer);
+          setTimeout(()=>document.getElementById('progressWrap').style.display='none',1200);
+          handleVideoResult(p);
+          document.getElementById('btnAnalyze').disabled=false;
+        }
+      });
+  }, 500);
+}
+
+// ══════════════════════════════════════════
+//  RESULT HANDLERS
+// ══════════════════════════════════════════
+function handleImageResult(data){
+  const s = data.stats;
+  outputImgFile = data.output_file;
+  outputCsvFile = data.csv_file;
+  document.getElementById('outputPath').textContent = data.output_folder;
+
+  setStatCard('valWeeds', s.weeds, 'cardWeed',  s.weeds>0);
+  setStatCard('valCrops', s.crops, 'cardCrop',  s.crops>0);
+  setStatCard('valTarget', s.target?'YES':'NONE', 'cardTarget', s.target);
+  setStatCard('valPan',  s.pan+'°',  'cardPan',  false);
+  setStatCard('valTilt', s.tilt+'°', 'cardTilt', false);
+
+  const confPct = s.target_conf!=null ? (s.target_conf*100).toFixed(1)+'%' : '—';
+  setStatCard('valConf', confPct, 'cardConf', false);
+
+  if(s.target_cx!=null){
+    document.getElementById('valCx').textContent = s.target_cx;
+    document.getElementById('valCy').textContent = s.target_cy;
+    document.getElementById('coordRow').style.display='grid';
+  }
+  document.getElementById('laserLocked').classList.toggle('show', s.target===true);
+
+  // detections table
+  const tbody = document.getElementById('detTableBody');
+  tbody.innerHTML='';
+  (s.detections||[]).forEach((d,i)=>{
+    const isTgt = d.is_target;
+    const cls   = d.class.replace('*','');
+    let badge = `<span class="badge badge-crop">CROP</span>`;
+    if(d.class.includes('*'))   badge = `<span class="badge badge-fixed">FIXED→CROP</span>`;
+    else if(isTgt)              badge = `<span class="badge badge-target">🎯 TARGET</span>`;
+    else if(cls.toLowerCase().includes('weed')) badge = `<span class="badge badge-weed">WEED</span>`;
+    const b=d.box;
+    tbody.innerHTML+=`<tr class="${isTgt?'is-target':''}">
+      <td>${i}</td><td>${d.class}</td>
+      <td>${(d.conf*100).toFixed(1)}%</td>
+      <td style="font-size:0.6rem;">${b[0]},${b[1]},${b[2]},${b[3]}</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+  document.getElementById('detTableWrap').style.display = s.detections&&s.detections.length?'block':'none';
+
+  // Preview image
+  if(data.preview_b64){
+    const pa = document.getElementById('previewArea');
+    pa.innerHTML = `<img src="data:image/jpeg;base64,${data.preview_b64}" alt="Annotated output"/>
+                    <div class="preview-badge" style="display:block">✅ ANNOTATED</div>`;
+  }
+
+  // Save strip
+  document.getElementById('saveStrip').style.display='flex';
+  document.getElementById('btnDlImg').textContent='⬇ Download Image';
+  document.getElementById('btnDlCsv').textContent='⬇ Download CSV';
+  toast('Analysis complete! 🎯');
+}
+
+function handleVideoResult(p){
+  const s = p.stats || {};
+  outputCsvFile = p.out_filename ? p.out_filename.replace('.mp4','_results.csv') : null;
+  outputImgFile = p.out_filename;
+
+  setStatCard('valWeeds', s.weeds||0,            'cardWeed',  (s.weeds||0)>0);
+  setStatCard('valCrops', s.crops||0,            'cardCrop',  (s.crops||0)>0);
+  setStatCard('valTarget', s.target?'YES':'NONE', 'cardTarget', s.target);
+  setStatCard('valPan',   (s.pan||90)+'°',        'cardPan',  false);
+  setStatCard('valTilt',  (s.tilt||90)+'°',       'cardTilt', false);
+  const confPct = s.target_conf!=null ? (s.target_conf*100).toFixed(1)+'%' : '—';
+  setStatCard('valConf', confPct, 'cardConf', false);
+
+  document.getElementById('laserLocked').classList.toggle('show', s.target===true);
+
+  if(s.target_cx!=null){
+    document.getElementById('valCx').textContent=s.target_cx;
+    document.getElementById('valCy').textContent=s.target_cy;
+    document.getElementById('coordRow').style.display='grid';
+  }
+
+  // video extras
+  document.getElementById('valFrames').textContent    = s.frames||0;
+  document.getElementById('valWeedFrames').textContent = s.weed_frames||0;
+  document.getElementById('valWeedRate').textContent   = (s.weed_frame_rate||0)+'%';
+  document.getElementById('valFixed').textContent      = s.fixed||0;
+  document.getElementById('videoExtra').style.display  = 'grid';
+
+  // Preview — show video player
+  if(p.out_filename){
+    const pa = document.getElementById('previewArea');
+    pa.innerHTML = `<video controls style="max-width:100%;max-height:560px;border-radius:4px;">
+                      <source src="/outputs/${p.out_filename}" type="video/mp4"/>
+                    </video>
+                    <div class="preview-badge" style="display:block">✅ ANNOTATED VIDEO</div>`;
+  }
+
+  document.getElementById('saveStrip').style.display='flex';
+  document.getElementById('btnDlImg').textContent='⬇ Download Video';
+  toast('Video analysis complete! 🎯');
+}
+
+// ══════════════════════════════════════════
+//  DOWNLOAD
+// ══════════════════════════════════════════
+function downloadOutput(type){
+  const f = type==='img' ? outputImgFile : outputCsvFile;
+  if(!f){ toast('No file to download.'); return; }
+  const a=document.createElement('a');
+  a.href=`/outputs/${f}`;
+  a.download=f;
+  a.click();
+}
+
+// ══════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════
+function setStatCard(valId, val, cardId, active){
+  document.getElementById(valId).textContent = val;
+  document.getElementById(cardId).classList.toggle('active', active);
+}
+function setProgress(pct, label){
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=label;
+}
+function resetResults(){
+  ['valWeeds','valCrops','valTarget','valPan','valTilt','valConf']
+    .forEach(id=>document.getElementById(id).textContent='—');
+  ['cardWeed','cardCrop','cardTarget'].forEach(id=>
+    document.getElementById(id).classList.remove('active'));
+  document.getElementById('coordRow').style.display='none';
+  document.getElementById('videoExtra').style.display='none';
+  document.getElementById('detTableWrap').style.display='none';
+  document.getElementById('laserLocked').classList.remove('show');
+  document.getElementById('saveStrip').style.display='none';
+  document.getElementById('previewArea').innerHTML=`
+    <div class="preview-placeholder">
+      <div class="ph-icon">🛰️</div>
+      <p>Processing…</p>
+    </div>`;
+}
+function resetState(){
+  uploadedFile=null;
+  document.getElementById('btnAnalyze').disabled=true;
+  document.getElementById('uploadFilename').style.display='none';
+  document.getElementById('uploadIcon').textContent='📂';
+  document.getElementById('fileInput').value='';
+  resetResults();
+  hideError();
+  document.getElementById('progressWrap').style.display='none';
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+}
+function showError(msg){
+  const b=document.getElementById('errorBox');
+  b.textContent='❌ '+msg; b.style.display='block';
+}
+function hideError(){ document.getElementById('errorBox').style.display='none'; }
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
